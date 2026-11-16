@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Trip Planner</title>
+    <link rel="stylesheet" href="./app.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar__inner">
+        <div class="brand">
+          <span class="brand__mark" aria-hidden="true"></span>
+          <span class="brand__name">AI Trip Planner</span>
+        </div>
+        <nav class="topbar__links">
+          <a href="/docs">API reference</a>
+          <a href="/ready" id="readyLink">Readiness</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel" id="requestPanel" aria-labelledby="requestHeading">
+        <div class="panel__head">
+          <h1 id="requestHeading" class="panel__title">New travel request</h1>
+          <p class="panel__subtitle">
+            A research agent gathers destination intelligence, a planner agent drafts the
+            itinerary, and the workflow pauses for your review before anything is final.
+          </p>
+        </div>
+
+        <form id="requestForm" class="form" novalidate>
+          <div class="field">
+            <label for="destination">Destination</label>
+            <input id="destination" name="destination" type="text" required
+                   placeholder="Kyoto, Japan" autocomplete="off" />
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="start_date">Start date</label>
+              <input id="start_date" name="start_date" type="date" required />
+            </div>
+            <div class="field">
+              <label for="end_date">End date</label>
+              <input id="end_date" name="end_date" type="date" required />
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="budget_min">Budget min</label>
+              <input id="budget_min" name="budget_min" type="number" min="0" step="50"
+                     value="1800" required />
+            </div>
+            <div class="field">
+              <label for="budget_max">Budget max</label>
+              <input id="budget_max" name="budget_max" type="number" min="1" step="50"
+                     value="2600" required />
+            </div>
+            <div class="field field--narrow">
+              <label for="currency">Currency</label>
+              <input id="currency" name="currency" type="text" maxlength="3" value="USD"
+                     required />
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="interests">Interests</label>
+              <input id="interests" name="interests" type="text"
+                     placeholder="temples, food, autumn foliage" />
+              <p class="hint">Comma separated.</p>
+            </div>
+            <div class="field field--narrow">
+              <label for="travelers">Travellers</label>
+              <input id="travelers" name="travelers" type="number" min="1" value="2"
+                     required />
+            </div>
+          </div>
+
+          <div class="form__actions">
+            <button type="submit" class="btn btn--primary" id="submitBtn">
+              Start planning
+            </button>
+            <button type="button" class="btn btn--quiet" id="sampleBtn">
+              Use sample trip
+            </button>
+          </div>
+          <p class="form__note">
+            A full run makes real search and model calls and usually takes several minutes.
+          </p>
+        </form>
+      </section>
+
+      <section class="panel" id="runPanel" hidden aria-labelledby="runHeading">
+        <div class="panel__head panel__head--row">
+          <div>
+            <h2 id="runHeading" class="panel__title" data-role="destination">—</h2>
+            <p class="panel__subtitle">
+              <span class="mono" data-role="planId">—</span>
+            </p>
+          </div>
+          <span class="status" data-role="status">pending</span>
+        </div>
+
+        <ol class="stages" data-role="stages">
+          <li data-stage="researching"><span></span>Research</li>
+          <li data-stage="planning"><span></span>Draft</li>
+          <li data-stage="awaiting_review"><span></span>Review</li>
+          <li data-stage="completed"><span></span>Final</li>
+        </ol>
+
+        <div class="progress" data-role="progress" hidden>
+          <div class="progress__bar"><span data-role="bar"></span></div>
+          <div class="progress__line">
+            <span class="progress__now" data-role="now">Starting…</span>
+            <span class="progress__clock">
+              <span data-role="elapsed">0:00</span>
+              <span class="progress__eta" data-role="eta"></span>
+            </span>
+          </div>
+        </div>
+
+        <div class="feed" data-role="feed" hidden>
+          <div class="feed__head">
+            <h3 class="subhead">Live activity</h3>
+            <span class="count" data-role="feedCount"></span>
+          </div>
+          <ul data-role="notes"></ul>
+        </div>
+
+        <div class="meta" data-role="meta"></div>
+        <div class="error" data-role="error" hidden></div>
+
+        <details class="trail">
+          <summary>Audit trail</summary>
+          <ul data-role="events"></ul>
+        </details>
+
+        <div class="panel__actions">
+          <button type="button" class="btn btn--quiet" id="newPlanBtn">
+            Start another plan
+          </button>
+        </div>
+      </section>
+
+      <section class="panel" id="draftPanel" hidden aria-labelledby="draftHeading">
+        <div class="panel__head">
+          <h2 id="draftHeading" class="panel__title">Draft itinerary</h2>
+          <p class="panel__subtitle" data-role="summary"></p>
+        </div>
+
+        <div class="budget" data-role="budget"></div>
+        <div class="days" data-role="days"></div>
+        <div class="dining" data-role="dining"></div>
+      </section>
+
+      <section class="panel panel--review" id="reviewPanel" hidden
+               aria-labelledby="reviewHeading">
+        <div class="panel__head">
+          <h2 id="reviewHeading" class="panel__title">Your decision</h2>
+          <p class="panel__subtitle">
+            <span data-role="revisions"></span>
+          </p>
+        </div>
+
+        <div class="tabs" role="tablist">
+          <button role="tab" class="tab is-active" data-tab="approve">Approve</button>
+          <button role="tab" class="tab" data-tab="reject">Reject</button>
+          <button role="tab" class="tab" data-tab="modify">Modify</button>
+        </div>
+
+        <div class="tabpanel is-active" data-panel="approve">
+          <p class="tabpanel__lead">
+            Accept the itinerary as it stands. The workflow assembles the packing and
+            preparation material and produces the final plan.
+          </p>
+          <button type="button" class="btn btn--primary" data-action="approve">
+            Approve plan
+          </button>
+        </div>
+
+        <div class="tabpanel" data-panel="reject">
+          <p class="tabpanel__lead">
+            Say what is wrong. Your comments are routed back to whichever agent can fix
+            it — research when new facts are needed, the planner when the shape is wrong.
+          </p>
+          <div class="field">
+            <label for="feedback">Feedback</label>
+            <textarea id="feedback" rows="3"
+              placeholder="Day 2 is exhausting and nothing covers the food markets."></textarea>
+          </div>
+          <button type="button" class="btn btn--primary" data-action="reject">
+            Send back for revision
+          </button>
+        </div>
+
+        <div class="tabpanel" data-panel="modify">
+          <p class="tabpanel__lead">
+            Edit the draft directly. Structural edits apply immediately without a model
+            call; a written instruction is handed to the planner instead.
+          </p>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="operation">Operation</label>
+              <select id="operation">
+                <option value="remove_activity">Remove an activity</option>
+                <option value="set_day_notes">Set notes on a day</option>
+                <option value="set_lodging_preference">Set lodging preference</option>
+                <option value="add_activity">Add an activity</option>
+                <option value="replace_activity">Replace an activity</option>
+                <option value="instruction">Written instruction</option>
+              </select>
+            </div>
+            <div class="field field--narrow" data-operand="day">
+              <label for="dayNumber">Day</label>
+              <input id="dayNumber" type="number" min="1" value="1" />
+            </div>
+            <div class="field field--narrow" data-operand="index">
+              <label for="activityIndex">Activity #</label>
+              <input id="activityIndex" type="number" min="1" value="1" />
+            </div>
+          </div>
+
+          <div class="field" data-operand="value">
+            <label for="patchValue">Value</label>
+            <input id="patchValue" type="text" placeholder="Arrive late; keep it light." />
+          </div>
+
+          <div class="field" data-operand="instruction">
+            <label for="instruction">Instruction</label>
+            <textarea id="instruction" rows="2"
+              placeholder="Swap the day 4 museum for something outdoors."></textarea>
+          </div>
+
+          <fieldset class="subform" data-operand="activity">
+            <legend>Activity</legend>
+            <div class="field-row">
+              <div class="field">
+                <label for="actName">Name</label>
+                <input id="actName" type="text" placeholder="Nishiki Market" />
+              </div>
+              <div class="field field--narrow">
+                <label for="actKind">Kind</label>
+                <select id="actKind">
+                  <option>sightseeing</option><option>museum</option>
+                  <option>outdoor</option><option>food</option>
+                  <option>nightlife</option><option>shopping</option>
+                  <option>relaxation</option><option>transit</option>
+                  <option>event</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field field--narrow">
+                <label for="actHours">Hours</label>
+                <input id="actHours" type="number" min="0.5" step="0.5" value="2" />
+              </div>
+              <div class="field field--narrow">
+                <label for="actCost">Cost pp</label>
+                <input id="actCost" type="number" min="0" step="1" value="0" />
+              </div>
+              <div class="field">
+                <label for="actArea">Neighbourhood</label>
+                <input id="actArea" type="text" placeholder="Nakagyo" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="actDesc">Description</label>
+              <input id="actDesc" type="text" placeholder="Covered market of food stalls." />
+            </div>
+          </fieldset>
+
+          <button type="button" class="btn btn--primary" data-action="modify">
+            Apply change
+          </button>
+        </div>
+      </section>
+
+      <section class="panel panel--final" id="finalPanel" hidden
+               aria-labelledby="finalHeading">
+        <div class="panel__head">
+          <h2 id="finalHeading" class="panel__title">Final plan</h2>
+          <p class="panel__subtitle" data-role="finalMeta"></p>
+        </div>
+        <div class="final-grid">
+          <div>
+            <h3 class="subhead">Packing list</h3>
+            <ul class="ticklist" data-role="packing"></ul>
+          </div>
+          <div>
+            <h3 class="subhead">Before you go</h3>
+            <ul class="ticklist" data-role="checklist"></ul>
+          </div>
+        </div>
+        <div class="weather" data-role="weather"></div>
+        <details class="trail">
+          <summary>Sources <span class="count" data-role="sourceCount"></span></summary>
+          <ul class="sources" data-role="sources"></ul>
+        </details>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" hidden></div>
+    <script src="./app.js"></script>
+  </body>
+</html>

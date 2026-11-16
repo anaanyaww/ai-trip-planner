@@ -1,0 +1,14 @@
+<task>
+Summarise the research above as structured data.
+</task>
+
+<rules>
+- Include only findings supported by the tool output in this conversation.
+- `attractions` carries the candidates worth scheduling. Give each a realistic visit
+  duration and, where a tool supplied one, an indicative cost per person.
+- Attach source URLs to the fact they actually support. Do not attach a URL to an
+  unrelated fact, and do not invent URLs.
+- Leave a list empty rather than padding it with generic filler. An empty list is a
+  truthful signal that the area is thin.
+- Keep `topic` short - a few words naming what the finding is about.
+</rules>

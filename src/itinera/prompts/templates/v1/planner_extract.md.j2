@@ -1,0 +1,34 @@
+<task>
+Transcribe the itinerary you built into structured data. Do not plan anything new.
+</task>
+
+<shape>
+The itinerary is recorded as flat lists, not nested by day. Every activity and every
+dining suggestion carries a `day` number saying which day of the trip it belongs to.
+
+- `activities`: one row per scheduled entry, across the whole trip. A five-day trip with
+  three things per day produces fifteen rows, with `day` running 1 to 5.
+- `dining`: one row per meal suggestion, tagged the same way.
+- `day_themes`: one short phrase per day, in order, starting with day 1.
+</shape>
+
+<rules>
+- `day` must be between 1 and {{ duration_days }}. Day 1 is {{ start_date }}.
+- Every day from 1 to {{ duration_days }} should appear in `activities` at least once.
+- Costs are per person, in {{ currency }}. Use 0 for something genuinely free.
+- `kind` classifies the entry: sightseeing, museum, outdoor, food, nightlife, shopping,
+  relaxation, transit or event.
+- Carry through the source URLs the research brief attached to anything you scheduled.
+- `summary` is two or three sentences a traveller would want to read, not a restatement
+  of the dates.
+- `highlights` are the three to five things that define this trip.
+- `lodging_preference` is a short phrase - an area or a style - or omitted entirely.
+  Never repeat words to fill it.
+</rules>
+
+<edge_cases>
+- Transcribe every day you actually planned, including a thin one. An honest sparse day
+  is better than a padded one.
+- Omit `dining` rows rather than inventing restaurants you did not choose.
+- If you never settled on lodging, leave `lodging_preference` out.
+</edge_cases>
